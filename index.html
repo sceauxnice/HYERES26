@@ -89,7 +89,7 @@
 
 <main>
   <div class="panel">
-    <h2>Agenda — Aujourd'hui</h2>
+    <h2>Agenda — Semaine en cours</h2>
     <iframe id="agenda-today" src=""></iframe>
   </div>
 
@@ -107,21 +107,22 @@
 
   const calId = encodeURIComponent('mouchka.godlewski@gmail.com');
   const ctz = 'Europe%2FParis';
-  const commonParams = '&mode=AGENDA&showTitle=0&showPrint=0&showTz=0&showCalendars=0&showTabs=0&showNav=0&showDate=0';
-  const base = 'https://calendar.google.com/calendar/embed?src=' + calId + '&ctz=' + ctz + commonParams;
+  const weekParams = '&mode=WEEK&showTitle=0&showPrint=0&showTz=0&showCalendars=0&showTabs=0&showNav=0';
+  const agendaParams = '&mode=AGENDA&showTitle=0&showPrint=0&showTz=0&showCalendars=0&showTabs=0&showNav=0&showDate=0';
+
+  const weekBase = 'https://calendar.google.com/calendar/embed?src=' + calId + '&ctz=' + ctz + weekParams;
+  const agendaBase = 'https://calendar.google.com/calendar/embed?src=' + calId + '&ctz=' + ctz + agendaParams;
 
   const today = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(today.getDate() + 1);
   const in8days = new Date();
   in8days.setDate(today.getDate() + 8);
 
-  // Vue du jour uniquement (bornée strictement à aujourd'hui, sans navigation possible vers d'autres jours)
-  const todayUrl = base + '&dates=' + fmt(today) + '/' + fmt(tomorrow);
-  document.getElementById('agenda-today').src = todayUrl;
+  // Vue semaine (grille) centrée sur la semaine en cours
+  const weekUrl = weekBase + '&dates=' + fmt(today) + '/' + fmt(today);
+  document.getElementById('agenda-today').src = weekUrl;
 
   // Vue sur les 8 prochains jours
-  const next8Url = base + '&dates=' + fmt(today) + '/' + fmt(in8days);
+  const next8Url = agendaBase + '&dates=' + fmt(today) + '/' + fmt(in8days);
   document.getElementById('agenda-next8').src = next8Url;
 </script>
 
