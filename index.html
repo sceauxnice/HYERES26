@@ -107,8 +107,9 @@
 
   const calId = encodeURIComponent('mouchka.godlewski@gmail.com');
   const ctz = 'Europe%2FParis';
-  const weekParams = '&mode=WEEK&showTitle=0&showPrint=0&showTz=0&showCalendars=0&showTabs=0&showNav=0';
-  const agendaParams = '&mode=AGENDA&showTitle=0&showPrint=0&showTz=0&showCalendars=0&showTabs=0&showNav=0&showDate=0';
+  const lang = 'fr';
+  const weekParams = '&mode=WEEK&showTitle=0&showPrint=0&showTz=0&showCalendars=0&showTabs=0&showNav=0&hl=' + lang;
+  const agendaParams = '&mode=AGENDA&showTitle=0&showPrint=0&showTz=0&showCalendars=0&showTabs=0&showNav=0&showDate=0&hl=' + lang;
 
   const weekBase = 'https://calendar.google.com/calendar/embed?src=' + calId + '&ctz=' + ctz + weekParams;
   const agendaBase = 'https://calendar.google.com/calendar/embed?src=' + calId + '&ctz=' + ctz + agendaParams;
