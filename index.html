@@ -3,84 +3,179 @@
 <head>
 <meta charset="UTF-8">
 <title>Tableau de bord</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --accent: #4f6df5;
+    --accent-2: #7c9bff;
+    --bg: #eef1f8;
+    --card: #ffffff;
+    --text: #232636;
+    --muted: #8a8fa3;
+    --radius: 16px;
+  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f5f5f5;
+    font-family: 'Inter', Arial, sans-serif;
+    background: linear-gradient(160deg, #eef1f8 0%, #e4e9f7 45%, #eef4f2 100%);
+    color: var(--text);
+    min-height: 100vh;
   }
 
   /* Bandeau supérieur */
   header {
-    background: #ffffff;
-    border-bottom: 1px solid #ddd;
-    padding: 14px 20px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    padding: 22px 20px;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    gap: 4px;
+    box-shadow: 0 4px 16px rgba(79,109,245,0.25);
+  }
+  header .brand {
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+    margin-bottom: 6px;
   }
   header form {
     display: flex;
     width: 100%;
-    max-width: 600px;
+    max-width: 620px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    border-radius: 28px;
+    overflow: hidden;
   }
   header input[type="text"] {
     flex: 1;
-    padding: 10px 16px;
-    border: 1px solid #ccc;
-    border-radius: 24px 0 0 24px;
+    padding: 13px 20px;
+    border: none;
     font-size: 15px;
     outline: none;
+    font-family: 'Inter', sans-serif;
   }
   header button {
-    border: 1px solid #4285f4;
-    background: #4285f4;
+    border: none;
+    background: #2c3454;
     color: white;
-    padding: 10px 20px;
-    border-radius: 0 24px 24px 0;
+    padding: 0 24px;
     font-size: 15px;
+    font-weight: 500;
     cursor: pointer;
+    transition: background 0.2s;
   }
   header button:hover {
-    background: #3367d6;
+    background: #1e2440;
   }
 
   /* Zone principale */
   main {
     display: flex;
-    gap: 16px;
-    padding: 16px;
-    height: calc(100vh - 80px);
+    gap: 18px;
+    padding: 20px 5%;
+    height: calc(100vh - 100px);
+    align-items: stretch;
   }
   .panel {
-    flex: 1;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 20px rgba(40,50,90,0.08);
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.03);
   }
+  .col-50 { flex: 0 0 50%; max-width: 50%; }
+  .col-30 { flex: 0 0 30%; max-width: 30%; }
+  .col-right { flex: 0 0 20%; max-width: 20%; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+
   .panel h2 {
     margin: 0;
-    padding: 12px 16px;
-    font-size: 16px;
-    background: #fafafa;
-    border-bottom: 1px solid #eee;
-    color: #333;
+    padding: 14px 18px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    background: #f7f8fc;
+    border-bottom: 1px solid #eef0f6;
+    color: #3a3f55;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.2px;
   }
   .panel iframe {
     flex: 1;
     border: none;
     width: 100%;
   }
+
+  /* Panneau météo */
+  .weather-panel { flex: 0 0 38%; }
+  .weather-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 18px;
+    background: linear-gradient(160deg, #fdfdff 0%, #eef2fb 100%);
+    text-align: center;
+  }
+  .weather-icon { font-size: 52px; line-height: 1; margin-bottom: 6px; }
+  .weather-temp { font-family: 'Poppins', sans-serif; font-size: 40px; font-weight: 700; color: #2c3454; }
+  .weather-desc { font-size: 14px; color: var(--muted); margin-top: 2px; }
+  .weather-meta { display: flex; gap: 18px; margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .weather-meta span b { color: var(--text); font-weight: 600; }
+  .weather-loading { color: var(--muted); font-size: 13px; }
+
+  /* Panneau actualités */
+  .news-panel { flex: 1; }
+  .news-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0;
+  }
+  .news-item {
+    display: block;
+    padding: 12px 18px;
+    text-decoration: none;
+    color: var(--text);
+    border-bottom: 1px solid #f2f3f8;
+    font-size: 13.5px;
+    line-height: 1.4;
+    transition: background 0.15s;
+  }
+  .news-item:hover { background: #f5f7ff; }
+  .news-item .src {
+    display: block;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .news-loading, .news-error {
+    padding: 18px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .news-error a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: #d7dcee; border-radius: 3px; }
 </style>
 </head>
 <body>
 
 <header>
+  <div class="brand">Tableau de bord</div>
   <form action="https://www.google.com/search" method="GET" target="_blank">
     <input type="text" name="q" placeholder="Rechercher sur Google...">
     <button type="submit">Rechercher</button>
@@ -88,14 +183,30 @@
 </header>
 
 <main>
-  <div class="panel">
-    <h2>Agenda — Semaine en cours</h2>
+  <div class="panel col-50">
+    <h2>📅 Agenda — Semaine en cours</h2>
     <iframe id="agenda-today" src=""></iframe>
   </div>
 
-  <div class="panel">
-    <h2>Agenda — 8 prochains jours</h2>
+  <div class="panel col-30">
+    <h2>🗒️ Agenda — 8 prochains jours</h2>
     <iframe id="agenda-next8" src=""></iframe>
+  </div>
+
+  <div class="col-right">
+    <div class="panel weather-panel">
+      <h2>☀️ Météo — Hyères (83)</h2>
+      <div class="weather-body" id="weather-body">
+        <div class="weather-loading">Chargement…</div>
+      </div>
+    </div>
+
+    <div class="panel news-panel">
+      <h2>📰 Actualités — Google News France</h2>
+      <div class="news-list" id="news-list">
+        <div class="news-loading">Chargement des actualités…</div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -125,6 +236,66 @@
   // Vue sur les 8 prochains jours
   const next8Url = agendaBase + '&dates=' + fmt(today) + '/' + fmt(in8days);
   document.getElementById('agenda-next8').src = next8Url;
+
+  // ---------- Météo Hyères (83) via Open-Meteo (sans clé API) ----------
+  const weatherCodes = {
+    0: ['☀️', 'Ciel dégagé'], 1: ['🌤️', 'Plutôt dégagé'], 2: ['⛅', 'Partiellement nuageux'], 3: ['☁️', 'Couvert'],
+    45: ['🌫️', 'Brouillard'], 48: ['🌫️', 'Brouillard givrant'],
+    51: ['🌦️', 'Bruine légère'], 53: ['🌦️', 'Bruine'], 55: ['🌦️', 'Bruine dense'],
+    61: ['🌧️', 'Pluie légère'], 63: ['🌧️', 'Pluie'], 65: ['🌧️', 'Pluie forte'],
+    71: ['🌨️', 'Neige légère'], 73: ['🌨️', 'Neige'], 75: ['❄️', 'Neige forte'],
+    80: ['🌦️', 'Averses légères'], 81: ['🌧️', 'Averses'], 82: ['⛈️', 'Averses violentes'],
+    95: ['⛈️', 'Orage'], 96: ['⛈️', 'Orage avec grêle'], 99: ['⛈️', 'Orage violent']
+  };
+
+  async function loadWeather() {
+    const el = document.getElementById('weather-body');
+    try {
+      const lat = 43.1198, lon = 6.1284; // Hyères (Var, 83)
+      const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+                  '&current_weather=true&timezone=Europe%2FParis';
+      const res = await fetch(url);
+      const data = await res.json();
+      const cw = data.current_weather;
+      const info = weatherCodes[cw.weathercode] || ['🌡️', 'Conditions actuelles'];
+      el.innerHTML =
+        '<div class="weather-icon">' + info[0] + '</div>' +
+        '<div class="weather-temp">' + Math.round(cw.temperature) + '°C</div>' +
+        '<div class="weather-desc">' + info[1] + '</div>' +
+        '<div class="weather-meta">' +
+          '<span>💨 <b>' + Math.round(cw.windspeed) + ' km/h</b></span>' +
+          '<span>🕒 <b>' + cw.time.slice(11,16) + '</b></span>' +
+        '</div>';
+    } catch (e) {
+      el.innerHTML = '<div class="weather-loading">Météo indisponible pour le moment.</div>';
+    }
+  }
+  loadWeather();
+
+  // ---------- Actualités Google News France (via flux RSS) ----------
+  async function loadNews() {
+    const el = document.getElementById('news-list');
+    const rssUrl = 'https://news.google.com/rss?hl=fr&gl=FR&ceid=FR:fr';
+    const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl);
+    try {
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+      if (!data.items || !data.items.length) throw new Error('empty');
+      const items = data.items.slice(0, 10);
+      el.innerHTML = items.map(item => {
+        const source = (item.title.match(/- (.*?)$/) || [,''])[1];
+        const title = item.title.replace(/ - .*?$/, '');
+        return '<a class="news-item" href="' + item.link + '" target="_blank" rel="noopener">' +
+                 title +
+                 (source ? '<span class="src">' + source + '</span>' : '') +
+               '</a>';
+      }).join('');
+    } catch (e) {
+      el.innerHTML = '<div class="news-error">Actualités indisponibles ici. ' +
+        '<a href="https://news.google.com/?hl=fr&gl=FR&ceid=FR:fr" target="_blank">Voir Google News France</a></div>';
+    }
+  }
+  loadNews();
 </script>
 
 </body>
