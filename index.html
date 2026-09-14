@@ -107,14 +107,17 @@
 
   const calId = encodeURIComponent('mouchka.godlewski@gmail.com');
   const ctz = 'Europe%2FParis';
-  const base = 'https://calendar.google.com/calendar/embed?src=' + calId + '&ctz=' + ctz + '&mode=AGENDA&showTitle=0&showPrint=0&showTz=0';
+  const commonParams = '&mode=AGENDA&showTitle=0&showPrint=0&showTz=0&showCalendars=0&showTabs=0&showNav=0&showDate=0';
+  const base = 'https://calendar.google.com/calendar/embed?src=' + calId + '&ctz=' + ctz + commonParams;
 
   const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
   const in8days = new Date();
   in8days.setDate(today.getDate() + 8);
 
-  // Vue du jour uniquement
-  const todayUrl = base + '&dates=' + fmt(today) + '/' + fmt(today);
+  // Vue du jour uniquement (bornée strictement à aujourd'hui, sans navigation possible vers d'autres jours)
+  const todayUrl = base + '&dates=' + fmt(today) + '/' + fmt(tomorrow);
   document.getElementById('agenda-today').src = todayUrl;
 
   // Vue sur les 8 prochains jours
