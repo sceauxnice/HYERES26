@@ -280,11 +280,14 @@
       <h2>📝 Bloc-notes <span class="sync-dot" id="sync-dot" title="Statut de synchronisation"></span></h2>
 
       <div id="notes-setup" class="notes-setup">
-        <p>Pour partager ce bloc-notes entre plusieurs PC, créez un espace partagé (une seule fois), puis entrez le même identifiant sur les autres postes.</p>
+        <p>Pour synchroniser ce bloc-notes entre plusieurs PC :<br>
+        1. Créez un compte gratuit sur <a href="https://jsonbin.io/register" target="_blank">jsonbin.io</a> (une seule fois), puis récupérez votre clé <b>X-Master-Key</b> depuis votre tableau de bord jsonbin.<br>
+        2. Collez cette clé ci-dessous sur <b>chaque PC</b>.</p>
+        <input id="input-api-key" type="text" placeholder="Clé API JSONBin (X-Master-Key)">
         <button id="btn-create-bucket" type="button">Créer un espace partagé</button>
-        <div class="notes-setup-divider">— ou —</div>
-        <input id="input-bucket-id" type="text" placeholder="Identifiant partagé existant">
-        <button id="btn-use-bucket" type="button">Utiliser cet identifiant</button>
+        <div class="notes-setup-divider">— ou, si un autre PC a déjà créé l'espace —</div>
+        <input id="input-bucket-id" type="text" placeholder="Identifiant du bloc-notes existant">
+        <button id="btn-use-bucket" type="button">Rejoindre cet espace</button>
       </div>
 
       <div class="notes-toolbar" id="notes-toolbar" style="display:none;">
@@ -378,10 +381,11 @@
   }
   loadWeather();
 
-  // ---------- Bloc-notes synchronisé entre plusieurs PC (via KVdb.io, sans compte) ----------
-  const BUCKET_KEY = 'dashboard_kvdb_bucket_id';
-  const NOTES_REMOTE_KEY = 'notes';
+  // ---------- Bloc-notes synchronisé entre plusieurs PC (via JSONBin.io) ----------
+  const API_KEY_STORAGE = 'dashboard_jsonbin_key';
+  const BIN_ID_STORAGE = 'dashboard_jsonbin_bin_id';
   const LOCAL_CACHE_KEY = 'dashboard_notes_cache';
+  const JSONBIN_ROOT = 'https://api.jsonbin.io/v3/b';
 
   const setupEl = document.getElementById('notes-setup');
   const notesArea = document.getElementById('notes-area');
@@ -394,9 +398,14 @@
   const btnCreate = document.getElementById('btn-create-bucket');
   const btnUse = document.getElementById('btn-use-bucket');
   const inputId = document.getElementById('input-bucket-id');
+  const inputApiKey = document.getElementById('input-api-key');
 
-  let bucketId = null;
-  try { bucketId = localStorage.getItem(BUCKET_KEY); } catch (e) {}
+  let apiKey = null;
+  let binId = null;
+  try {
+    apiKey = localStorage.getItem(API_KEY_STORAGE);
+    binId = localStorage.getItem(BIN_ID_STORAGE);
+  } catch (e) {}
 
   let saveTimeout = null;
   let pollInterval = null;
@@ -415,14 +424,15 @@
 
   btnShowId.addEventListener('click', (e) => {
     e.preventDefault();
-    alert("Identifiant de cet espace partagé :\n\n" + bucketId + "\n\nÀ saisir sur vos autres PC dans le champ « Identifiant partagé existant ».");
+    alert("Identifiant du bloc-notes :\n\n" + binId + "\n\nÀ saisir sur vos autres PC (avec la même clé API) dans le champ « Identifiant du bloc-notes existant ».");
   });
 
   btnReset.addEventListener('click', (e) => {
     e.preventDefault();
+    if (!confirm("Déconnecter ce PC de l'espace partagé actuel ?")) return;
     clearInterval(pollInterval);
-    try { localStorage.removeItem(BUCKET_KEY); } catch (er) {}
-    bucketId = null;
+    try { localStorage.removeItem(BIN_ID_STORAGE); } catch (er) {}
+    binId = null;
     notesArea.style.display = 'none';
     notesToolbar.style.display = 'none';
     notesFooter.style.display = 'none';
@@ -430,7 +440,7 @@
     inputId.value = '';
   });
 
-  // ---- Barre d'outils : gras, couleur, surlignage, taille du texte ----
+  // ---- Barre d'outils : gras, couleur, surlignage, liste, taille du texte ----
   notesToolbar.addEventListener('mousedown', (e) => e.preventDefault()); // garde le focus/la sélection dans la note
   notesToolbar.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
@@ -453,18 +463,22 @@
   });
 
   async function fetchRemoteNote() {
-    const res = await fetch('https://kvdb.io/' + bucketId + '/' + NOTES_REMOTE_KEY, { cache: 'no-store' });
-    if (res.status === 404) return '';
-    if (!res.ok) throw new Error('kvdb get failed');
-    return await res.text();
+    const res = await fetch(JSONBIN_ROOT + '/' + binId + '/latest', {
+      headers: { 'X-Master-Key': apiKey },
+      cache: 'no-store'
+    });
+    if (!res.ok) throw new Error('jsonbin get failed: ' + res.status);
+    const data = await res.json();
+    return (data.record && data.record.content) || '';
   }
 
   async function pushRemoteNote(value) {
-    const res = await fetch('https://kvdb.io/' + bucketId + '/' + NOTES_REMOTE_KEY, {
-      method: 'POST',
-      body: value
+    const res = await fetch(JSONBIN_ROOT + '/' + binId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': apiKey },
+      body: JSON.stringify({ content: value })
     });
-    if (!res.ok) throw new Error('kvdb post failed');
+    if (!res.ok) throw new Error('jsonbin put failed: ' + res.status);
   }
 
   function triggerSave() {
@@ -523,37 +537,47 @@
   }
 
   btnCreate.addEventListener('click', async () => {
+    const key = inputApiKey.value.trim();
+    if (!key) { alert('Merci de coller votre clé API JSONBin (X-Master-Key) avant de créer un espace.'); return; }
     btnCreate.disabled = true;
     btnCreate.textContent = 'Création…';
     try {
-      const fakeEmail = 'pc-' + Date.now() + '@example.com';
-      const res = await fetch('https://kvdb.io', {
+      const res = await fetch(JSONBIN_ROOT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ email: fakeEmail })
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': key },
+        body: JSON.stringify({ content: '' })
       });
-      const id = (await res.text()).trim();
-      if (!res.ok || !id || id.includes(' ') || id.length > 60) throw new Error('invalid bucket id: ' + id);
-      bucketId = id;
-      localStorage.setItem(BUCKET_KEY, bucketId);
-      alert('Espace créé. Identifiant à saisir sur vos autres PC : ' + bucketId);
+      if (!res.ok) throw new Error('HTTP ' + res.status + ' — vérifiez votre clé API');
+      const data = await res.json();
+      const id = data.metadata && data.metadata.id;
+      if (!id) throw new Error('réponse inattendue du serveur');
+      apiKey = key;
+      binId = id;
+      localStorage.setItem(API_KEY_STORAGE, apiKey);
+      localStorage.setItem(BIN_ID_STORAGE, binId);
+      alert('Espace créé. Sur vos autres PC, utilisez :\n\nClé API : ' + apiKey + '\nIdentifiant : ' + binId);
       initNotes();
     } catch (e) {
       btnCreate.disabled = false;
       btnCreate.textContent = 'Créer un espace partagé';
-      alert('Impossible de créer un espace partagé pour le moment : ' + e.message);
+      alert('Impossible de créer un espace partagé : ' + e.message);
     }
   });
 
   btnUse.addEventListener('click', () => {
+    const key = inputApiKey.value.trim();
     const id = inputId.value.trim();
-    if (!id) return;
-    bucketId = id;
-    try { localStorage.setItem(BUCKET_KEY, bucketId); } catch (e) {}
+    if (!key || !id) { alert('Merci de renseigner la clé API et l\'identifiant du bloc-notes.'); return; }
+    apiKey = key;
+    binId = id;
+    try {
+      localStorage.setItem(API_KEY_STORAGE, apiKey);
+      localStorage.setItem(BIN_ID_STORAGE, binId);
+    } catch (e) {}
     initNotes();
   });
 
-  if (bucketId) {
+  if (apiKey && binId) {
     initNotes();
   }
 </script>
