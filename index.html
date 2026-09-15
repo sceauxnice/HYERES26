@@ -223,6 +223,8 @@
     content: attr(data-placeholder);
     color: var(--muted);
   }
+  #notes-area ul { margin: 4px 0; padding-left: 20px; }
+  #notes-area li { margin: 2px 0; }
   .notes-status {
     font-size: 11px;
     color: var(--muted);
@@ -282,6 +284,8 @@
         <button type="button" data-cmd="foreColor" data-value="#232636" title="Texte normal">A</button>
         <button type="button" class="mark" data-cmd="hiliteColor" data-value="#fff3a0" title="Surligner">▮</button>
         <button type="button" data-cmd="hiliteColor" data-value="transparent" title="Retirer le surlignage">▯</button>
+        <span class="sep"></span>
+        <button type="button" data-cmd="insertUnorderedList" title="Liste à puces">•≡</button>
         <span class="sep"></span>
         <button type="button" data-action="grow" title="Agrandir le texte">A+</button>
         <button type="button" data-action="shrink" title="Réduire le texte">A−</button>
