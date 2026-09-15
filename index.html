@@ -527,9 +527,13 @@
     btnCreate.textContent = 'Création…';
     try {
       const fakeEmail = 'pc-' + Date.now() + '@example.com';
-      const res = await fetch('https://kvdb.io', { method: 'POST', body: 'email=' + fakeEmail });
+      const res = await fetch('https://kvdb.io', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ email: fakeEmail })
+      });
       const id = (await res.text()).trim();
-      if (!id) throw new Error('empty bucket id');
+      if (!res.ok || !id || id.includes(' ') || id.length > 60) throw new Error('invalid bucket id: ' + id);
       bucketId = id;
       localStorage.setItem(BUCKET_KEY, bucketId);
       alert('Espace créé. Identifiant à saisir sur vos autres PC : ' + bucketId);
@@ -537,7 +541,7 @@
     } catch (e) {
       btnCreate.disabled = false;
       btnCreate.textContent = 'Créer un espace partagé';
-      alert('Impossible de créer un espace partagé pour le moment (réseau bloqué ?).');
+      alert('Impossible de créer un espace partagé pour le moment : ' + e.message);
     }
   });
 
