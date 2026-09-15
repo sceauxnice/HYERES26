@@ -225,14 +225,23 @@
   }
   #notes-area ul { margin: 4px 0; padding-left: 20px; }
   #notes-area li { margin: 2px 0; }
-  .notes-status {
+  .notes-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-size: 11px;
     color: var(--muted);
     padding: 6px 16px;
-    text-align: right;
     background: #f7f8fc;
     border-top: 1px solid #eef0f6;
   }
+  .reset-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .reset-link:hover { text-decoration: underline; }
 
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-thumb { background: #d7dcee; border-radius: 3px; }
@@ -291,7 +300,13 @@
         <button type="button" data-action="shrink" title="Réduire le texte">A−</button>
       </div>
       <div id="notes-area" contenteditable="true" data-placeholder="Écrivez ici…" style="display:none;"></div>
-      <div class="notes-status" id="notes-status">&nbsp;</div>
+      <div class="notes-footer" id="notes-footer" style="display:none;">
+        <span id="notes-status">&nbsp;</span>
+        <span>
+          <a href="#" id="btn-show-id" class="reset-link">voir l'identifiant</a> ·
+          <a href="#" id="btn-reset-bucket" class="reset-link">changer d'espace</a>
+        </span>
+      </div>
     </div>
   </div>
 </main>
@@ -371,7 +386,10 @@
   const setupEl = document.getElementById('notes-setup');
   const notesArea = document.getElementById('notes-area');
   const notesToolbar = document.getElementById('notes-toolbar');
+  const notesFooter = document.getElementById('notes-footer');
   const notesStatus = document.getElementById('notes-status');
+  const btnReset = document.getElementById('btn-reset-bucket');
+  const btnShowId = document.getElementById('btn-show-id');
   const syncDot = document.getElementById('sync-dot');
   const btnCreate = document.getElementById('btn-create-bucket');
   const btnUse = document.getElementById('btn-use-bucket');
@@ -392,7 +410,25 @@
     setupEl.style.display = 'none';
     notesArea.style.display = 'block';
     notesToolbar.style.display = 'flex';
+    notesFooter.style.display = 'flex';
   }
+
+  btnShowId.addEventListener('click', (e) => {
+    e.preventDefault();
+    alert("Identifiant de cet espace partagé :\n\n" + bucketId + "\n\nÀ saisir sur vos autres PC dans le champ « Identifiant partagé existant ».");
+  });
+
+  btnReset.addEventListener('click', (e) => {
+    e.preventDefault();
+    clearInterval(pollInterval);
+    try { localStorage.removeItem(BUCKET_KEY); } catch (er) {}
+    bucketId = null;
+    notesArea.style.display = 'none';
+    notesToolbar.style.display = 'none';
+    notesFooter.style.display = 'none';
+    setupEl.style.display = 'block';
+    inputId.value = '';
+  });
 
   // ---- Barre d'outils : gras, couleur, surlignage, taille du texte ----
   notesToolbar.addEventListener('mousedown', (e) => e.preventDefault()); // garde le focus/la sélection dans la note
@@ -425,10 +461,10 @@
 
   async function pushRemoteNote(value) {
     const res = await fetch('https://kvdb.io/' + bucketId + '/' + NOTES_REMOTE_KEY, {
-      method: 'PUT',
+      method: 'POST',
       body: value
     });
-    if (!res.ok) throw new Error('kvdb put failed');
+    if (!res.ok) throw new Error('kvdb post failed');
   }
 
   function triggerSave() {
