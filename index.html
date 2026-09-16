@@ -307,6 +307,7 @@
         <span id="notes-status">&nbsp;</span>
         <span>
           <a href="#" id="btn-show-id" class="reset-link">voir l'identifiant</a> ·
+          <a href="#" id="btn-alert-config" class="reset-link">🔕 activer alerte</a> ·
           <a href="#" id="btn-reset-bucket" class="reset-link">changer d'espace</a>
         </span>
       </div>
@@ -394,11 +395,20 @@
   const notesStatus = document.getElementById('notes-status');
   const btnReset = document.getElementById('btn-reset-bucket');
   const btnShowId = document.getElementById('btn-show-id');
+  const btnAlertConfig = document.getElementById('btn-alert-config');
   const syncDot = document.getElementById('sync-dot');
   const btnCreate = document.getElementById('btn-create-bucket');
   const btnUse = document.getElementById('btn-use-bucket');
   const inputId = document.getElementById('input-bucket-id');
   const inputApiKey = document.getElementById('input-api-key');
+
+  const ALERT_ENABLED_KEY = 'dashboard_notes_alert_enabled';
+  let alertEnabled = false;
+  try { alertEnabled = localStorage.getItem(ALERT_ENABLED_KEY) === '1'; } catch (e) {}
+
+  function updateAlertLabel() {
+    btnAlertConfig.textContent = alertEnabled ? '🔔 alerte activée' : '🔕 activer alerte';
+  }
 
   let apiKey = null;
   let binId = null;
@@ -421,6 +431,33 @@
     notesToolbar.style.display = 'flex';
     notesFooter.style.display = 'flex';
   }
+
+  btnAlertConfig.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    if (alertEnabled) {
+      alertEnabled = false;
+      try { localStorage.setItem(ALERT_ENABLED_KEY, '0'); } catch (er) {}
+      updateAlertLabel();
+      alert('Alerte désactivée.');
+      return;
+    }
+
+    if (!('Notification' in window)) {
+      alert("Ce navigateur ne supporte pas les notifications.");
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      alertEnabled = true;
+      try { localStorage.setItem(ALERT_ENABLED_KEY, '1'); } catch (er) {}
+      updateAlertLabel();
+      new Notification('Alerte activée', { body: 'Vous serez notifié à chaque modification du bloc-notes.' });
+    } else {
+      alert("Notifications refusées par le navigateur — impossible d'activer l'alerte tant que la permission n'est pas accordée (réglages du navigateur).");
+    }
+  });
+  updateAlertLabel();
 
   btnShowId.addEventListener('click', (e) => {
     e.preventDefault();
@@ -523,6 +560,9 @@
       try {
         const remote = await fetchRemoteNote();
         if (remote !== lastKnownValue) {
+          if (alertEnabled && lastKnownValue !== null && 'Notification' in window && Notification.permission === 'granted') {
+            new Notification('Bloc-notes modifié', { body: 'Le bloc-notes vient d\'être mis à jour.' });
+          }
           lastKnownValue = remote;
           notesArea.innerHTML = remote;
           try { localStorage.setItem(LOCAL_CACHE_KEY, remote); } catch (e) {}
