@@ -248,6 +248,62 @@
 
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-thumb { background: #d7dcee; border-radius: 3px; }
+
+  .link-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(35,38,54,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .link-modal {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 22px;
+    width: 320px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.25);
+    font-family: 'Inter', sans-serif;
+  }
+  .link-modal h3 {
+    margin: 0 0 14px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    color: #2c3454;
+  }
+  .link-modal label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 10px 0 4px;
+  }
+  .link-modal input {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid #dde1ee;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: 'Inter', sans-serif;
+  }
+  .link-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .link-modal-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #link-modal-cancel { background: #f1f2f7; color: var(--text); }
+  #link-modal-cancel:hover { background: #e6e8f0; }
+  #link-modal-ok { background: var(--accent); color: white; }
+  #link-modal-ok:hover { background: #3d54d1; }
 </style>
 </head>
 <body>
@@ -321,6 +377,20 @@
     </div>
   </div>
 </main>
+
+<div id="link-modal-overlay" class="link-modal-overlay" style="display:none;">
+  <div class="link-modal">
+    <h3>Insérer un lien</h3>
+    <label for="link-modal-text">Texte à afficher</label>
+    <input type="text" id="link-modal-text" placeholder="Ex : Site de la mairie">
+    <label for="link-modal-url">Adresse du lien</label>
+    <input type="text" id="link-modal-url" placeholder="https://exemple.com">
+    <div class="link-modal-actions">
+      <button type="button" id="link-modal-cancel">Annuler</button>
+      <button type="button" id="link-modal-ok">Insérer</button>
+    </div>
+  </div>
+</div>
 
 <script>
   function pad(n) { return n.toString().padStart(2, '0'); }
@@ -508,35 +578,74 @@
       if (sel && sel.rangeCount > 0 && notesArea.contains(sel.anchorNode)) {
         range = sel.getRangeAt(0).cloneRange();
       }
-      const selectedText = range ? range.toString() : '';
-      const text = prompt('Texte à afficher :', selectedText);
-      if (text === null || text.trim() === '') return;
-      let url = prompt('Adresse du lien (ex: https://exemple.com) :', 'https://');
-      if (url === null || url.trim() === '') return;
-      url = url.trim();
-      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-
-      const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener';
-      link.textContent = text.trim();
-
-      notesArea.focus();
-      if (range) {
-        sel.removeAllRanges();
-        sel.addRange(range);
-        range.deleteContents();
-        range.insertNode(link);
-        range.setStartAfter(link);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      } else {
-        notesArea.appendChild(link);
-      }
+      pendingLinkRange = range;
+      linkModalText.value = range ? range.toString() : '';
+      linkModalUrl.value = 'https://';
+      linkModalOverlay.style.display = 'flex';
+      (linkModalText.value ? linkModalUrl : linkModalText).focus();
+      return; // la sauvegarde se fera après validation de la modale
     }
     triggerSave();
+  });
+
+  // ---- Modale d'insertion de lien ----
+  const linkModalOverlay = document.getElementById('link-modal-overlay');
+  const linkModalText = document.getElementById('link-modal-text');
+  const linkModalUrl = document.getElementById('link-modal-url');
+  const linkModalOk = document.getElementById('link-modal-ok');
+  const linkModalCancel = document.getElementById('link-modal-cancel');
+  let pendingLinkRange = null;
+
+  function closeLinkModal() {
+    linkModalOverlay.style.display = 'none';
+    pendingLinkRange = null;
+  }
+
+  function confirmLinkModal() {
+    const text = linkModalText.value.trim();
+    let url = linkModalUrl.value.trim();
+    if (!text || !url || url === 'https://') { closeLinkModal(); return; }
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = text;
+
+    notesArea.focus();
+    const sel = window.getSelection();
+    if (pendingLinkRange) {
+      sel.removeAllRanges();
+      sel.addRange(pendingLinkRange);
+      pendingLinkRange.deleteContents();
+      pendingLinkRange.insertNode(link);
+      pendingLinkRange.setStartAfter(link);
+      pendingLinkRange.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(pendingLinkRange);
+    } else {
+      notesArea.appendChild(link);
+    }
+    closeLinkModal();
+    triggerSave();
+  }
+
+  linkModalOk.addEventListener('click', confirmLinkModal);
+  linkModalCancel.addEventListener('click', closeLinkModal);
+  linkModalOverlay.addEventListener('click', (e) => { if (e.target === linkModalOverlay) closeLinkModal(); });
+  linkModalOverlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); confirmLinkModal(); }
+    if (e.key === 'Escape') closeLinkModal();
+  });
+
+  // ---- Clic sur un lien à l'intérieur du bloc-notes : ouvre l'adresse dans un nouvel onglet ----
+  notesArea.addEventListener('click', (e) => {
+    const link = e.target.closest('a');
+    if (link) {
+      e.preventDefault();
+      window.open(link.href, '_blank', 'noopener');
+    }
   });
 
   async function fetchRemoteNote() {
