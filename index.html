@@ -225,6 +225,8 @@
   }
   #notes-area ul { margin: 4px 0; padding-left: 20px; }
   #notes-area li { margin: 2px 0; }
+  #notes-area a { color: #1a73e8; text-decoration: underline; cursor: pointer; }
+  #notes-area a:hover { color: #0d47a1; }
   .notes-footer {
     display: flex;
     justify-content: space-between;
@@ -299,6 +301,8 @@
         <button type="button" data-cmd="hiliteColor" data-value="transparent" title="Retirer le surlignage">▯</button>
         <span class="sep"></span>
         <button type="button" data-cmd="insertUnorderedList" title="Liste à puces">•≡</button>
+        <span class="sep"></span>
+        <button type="button" data-action="link" title="Insérer un lien">🔗</button>
         <span class="sep"></span>
         <button type="button" data-action="grow" title="Agrandir le texte">A+</button>
         <button type="button" data-action="shrink" title="Réduire le texte">A−</button>
@@ -498,6 +502,39 @@
       const content = range.extractContents();
       span.appendChild(content);
       range.insertNode(span);
+    } else if (btn.dataset.action === 'link') {
+      const sel = window.getSelection();
+      let range = null;
+      if (sel && sel.rangeCount > 0 && notesArea.contains(sel.anchorNode)) {
+        range = sel.getRangeAt(0).cloneRange();
+      }
+      const selectedText = range ? range.toString() : '';
+      const text = prompt('Texte à afficher :', selectedText);
+      if (text === null || text.trim() === '') return;
+      let url = prompt('Adresse du lien (ex: https://exemple.com) :', 'https://');
+      if (url === null || url.trim() === '') return;
+      url = url.trim();
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = text.trim();
+
+      notesArea.focus();
+      if (range) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+        range.deleteContents();
+        range.insertNode(link);
+        range.setStartAfter(link);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        notesArea.appendChild(link);
+      }
     }
     triggerSave();
   });
