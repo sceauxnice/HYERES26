@@ -225,6 +225,11 @@
   }
   #notes-area ul { margin: 4px 0; padding-left: 20px; }
   #notes-area li { margin: 2px 0; }
+  #notes-area ul.bullet-disc { list-style-type: disc; }
+  #notes-area ul.bullet-square { list-style-type: square; }
+  #notes-area ul.bullet-dash { list-style-type: none; }
+  #notes-area ul.bullet-dash > li { position: relative; }
+  #notes-area ul.bullet-dash > li::before { content: '–'; position: absolute; left: -18px; }
   #notes-area a { color: #1a73e8; text-decoration: underline; cursor: pointer; }
   #notes-area a:hover { color: #0d47a1; }
   .notes-footer {
@@ -356,7 +361,12 @@
         <button type="button" class="mark" data-cmd="hiliteColor" data-value="#fff3a0" title="Surligner">▮</button>
         <button type="button" data-cmd="hiliteColor" data-value="transparent" title="Retirer le surlignage">▯</button>
         <span class="sep"></span>
-        <button type="button" data-cmd="insertUnorderedList" title="Liste à puces">•≡</button>
+        <button type="button" data-bullet="disc" title="Puces — point">•</button>
+        <button type="button" data-bullet="dash" title="Puces — trait">–</button>
+        <button type="button" data-bullet="square" title="Puces — carré">▪</button>
+        <span class="sep"></span>
+        <button type="button" data-action="outdent" title="Diminuer le retrait">⇤</button>
+        <button type="button" data-action="indent" title="Augmenter le retrait">⇥</button>
         <span class="sep"></span>
         <button type="button" data-action="link" title="Insérer un lien">🔗</button>
         <span class="sep"></span>
@@ -555,6 +565,29 @@
   });
 
   // ---- Barre d'outils : gras, couleur, surlignage, liste, taille du texte ----
+  function applyBulletStyle(style) {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    let node = sel.getRangeAt(0).startContainer;
+    let ul = null;
+    while (node && node !== notesArea) {
+      if (node.nodeName === 'UL') { ul = node; break; }
+      node = node.parentNode;
+    }
+    if (!ul) {
+      document.execCommand('insertUnorderedList');
+      const sel2 = window.getSelection();
+      if (sel2 && sel2.rangeCount > 0) {
+        let n = sel2.getRangeAt(0).startContainer;
+        while (n && n !== notesArea) {
+          if (n.nodeName === 'UL') { ul = n; break; }
+          n = n.parentNode;
+        }
+      }
+    }
+    if (ul) ul.className = 'bullet-' + style;
+  }
+
   notesToolbar.addEventListener('mousedown', (e) => e.preventDefault()); // garde le focus/la sélection dans la note
   notesToolbar.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
@@ -562,6 +595,10 @@
     notesArea.focus();
     if (btn.dataset.cmd) {
       document.execCommand(btn.dataset.cmd, false, btn.dataset.value || undefined);
+    } else if (btn.dataset.bullet) {
+      applyBulletStyle(btn.dataset.bullet);
+    } else if (btn.dataset.action === 'indent' || btn.dataset.action === 'outdent') {
+      document.execCommand(btn.dataset.action, false, null);
     } else if (btn.dataset.action === 'grow' || btn.dataset.action === 'shrink') {
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
