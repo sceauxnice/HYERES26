@@ -206,6 +206,22 @@
   .notes-toolbar button.b { font-weight: 700; }
   .notes-toolbar button.red { color: #e5453e; font-weight: 700; }
   .notes-toolbar button.mark { background: #fff3a0; border-color: #f0e27a; }
+  .notes-toolbar button.tagbtn-n { color: #1a4fd6; border-color: #c3d3ff; }
+  .notes-toolbar button.tagbtn-n:hover { background: #eef2ff; }
+  .notes-toolbar button.tagbtn-s { color: #1a8a4a; border-color: #bfe8cf; }
+  .notes-toolbar button.tagbtn-s:hover { background: #eafaf0; }
+  .name-tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 4px;
+    user-select: none;
+    vertical-align: middle;
+  }
+  .name-tag.tag-nicolas { background: #dbe6ff; color: #1a4fd6; }
+  .name-tag.tag-stephane { background: #dcf5e3; color: #1a8a4a; }
   .notes-toolbar .sep { width: 1px; background: #e2e5f0; margin: 3px 4px; }
   #notes-area {
     flex: 1;
@@ -365,6 +381,9 @@
         <button type="button" data-action="indent" title="Augmenter le retrait">⇥</button>
         <span class="sep"></span>
         <button type="button" data-action="link" title="Insérer un lien">🔗</button>
+        <span class="sep"></span>
+        <button type="button" class="tagbtn tagbtn-n" data-tag="nicolas" title="Marquer la ligne : Nicolas">N</button>
+        <button type="button" class="tagbtn tagbtn-s" data-tag="stephane" title="Marquer la ligne : Stéphane">S</button>
         <span class="sep"></span>
         <button type="button" data-action="grow" title="Agrandir le texte">A+</button>
         <button type="button" data-action="shrink" title="Réduire le texte">A−</button>
@@ -561,6 +580,58 @@
   });
 
   // ---- Barre d'outils : gras, couleur, surlignage, liste, taille du texte ----
+  function toggleNameTag(person) {
+    const label = person === 'nicolas' ? 'Nicolas' : 'Stéphane';
+    const cls = 'tag-' + person;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    let node = sel.getRangeAt(0).startContainer;
+    let lineEl = null;
+    while (node && node !== notesArea) {
+      if (node.nodeType === 1 && /^(LI|DIV|P)$/.test(node.tagName)) { lineEl = node; break; }
+      node = node.parentNode;
+    }
+
+    if (lineEl) {
+      const first = lineEl.firstChild;
+      if (first && first.nodeType === 1 && first.classList && first.classList.contains(cls)) {
+        // déjà présent en début de ligne : on retire (bascule)
+        const next = first.nextSibling;
+        if (next && next.nodeType === 3 && next.textContent.charAt(0) === '\u00A0') {
+          next.textContent = next.textContent.slice(1);
+        }
+        first.remove();
+      } else {
+        const tag = document.createElement('span');
+        tag.className = 'name-tag ' + cls;
+        tag.contentEditable = 'false';
+        tag.textContent = label;
+        lineEl.insertBefore(tag, lineEl.firstChild);
+        const after = tag.nextSibling;
+        if (!after || after.nodeType !== 3 || after.textContent.charAt(0) !== '\u00A0') {
+          lineEl.insertBefore(document.createTextNode('\u00A0'), tag.nextSibling);
+        }
+      }
+    } else {
+      // pas de ligne distincte détectée (tout début du bloc-notes) : on insère au curseur
+      const tag = document.createElement('span');
+      tag.className = 'name-tag ' + cls;
+      tag.contentEditable = 'false';
+      tag.textContent = label;
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(tag);
+      const spaceNode = document.createTextNode('\u00A0');
+      tag.parentNode.insertBefore(spaceNode, tag.nextSibling);
+      range.setStartAfter(spaceNode);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    notesArea.focus();
+  }
+
   notesToolbar.addEventListener('mousedown', (e) => e.preventDefault()); // garde le focus/la sélection dans la note
   notesToolbar.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
@@ -592,6 +663,8 @@
       linkModalOverlay.style.display = 'flex';
       (linkModalText.value ? linkModalUrl : linkModalText).focus();
       return; // la sauvegarde se fera après validation de la modale
+    } else if (btn.dataset.tag) {
+      toggleNameTag(btn.dataset.tag);
     }
     triggerSave();
   });
