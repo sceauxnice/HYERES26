@@ -210,6 +210,10 @@
   .notes-toolbar button.tagbtn-n:hover { background: #eef2ff; }
   .notes-toolbar button.tagbtn-s { color: #1a8a4a; border-color: #bfe8cf; }
   .notes-toolbar button.tagbtn-s:hover { background: #eafaf0; }
+  .notes-toolbar button.tagbtn-m { color: #b5590a; border-color: #f5d3ae; }
+  .notes-toolbar button.tagbtn-m:hover { background: #fdf1e4; }
+  .notes-toolbar button.tagbtn-g { color: #9a1a9a; border-color: #eec3ee; }
+  .notes-toolbar button.tagbtn-g:hover { background: #fbeefb; }
   .name-tag {
     display: inline-block;
     padding: 1px 8px;
@@ -222,6 +226,8 @@
   }
   .name-tag.tag-nicolas { background: #dbe6ff; color: #1a4fd6; }
   .name-tag.tag-stephane { background: #dcf5e3; color: #1a8a4a; }
+  .name-tag.tag-michel { background: #fbe6cc; color: #b5590a; }
+  .name-tag.tag-ghislaine { background: #f6def6; color: #9a1a9a; }
   .notes-toolbar .sep { width: 1px; background: #e2e5f0; margin: 3px 4px; }
   #notes-area {
     flex: 1;
@@ -384,6 +390,8 @@
         <span class="sep"></span>
         <button type="button" class="tagbtn tagbtn-n" data-tag="nicolas" title="Marquer la ligne : Nicolas">N</button>
         <button type="button" class="tagbtn tagbtn-s" data-tag="stephane" title="Marquer la ligne : Stéphane">S</button>
+        <button type="button" class="tagbtn tagbtn-m" data-tag="michel" title="Marquer la ligne : Michel">M</button>
+        <button type="button" class="tagbtn tagbtn-g" data-tag="ghislaine" title="Marquer la ligne : Ghislaine">G</button>
         <span class="sep"></span>
         <button type="button" data-action="grow" title="Agrandir le texte">A+</button>
         <button type="button" data-action="shrink" title="Réduire le texte">A−</button>
@@ -581,7 +589,8 @@
 
   // ---- Barre d'outils : gras, couleur, surlignage, liste, taille du texte ----
   function toggleNameTag(person) {
-    const label = person === 'nicolas' ? 'Nicolas' : 'Stéphane';
+    const labels = { nicolas: 'Nicolas', stephane: 'Stéphane', michel: 'Michel', ghislaine: 'Ghislaine' };
+    const label = labels[person] || person;
     const cls = 'tag-' + person;
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
