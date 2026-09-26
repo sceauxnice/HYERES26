@@ -771,7 +771,7 @@
         notesStatus.textContent = 'Synchronisé à ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
       } catch (e) {
         setDot('error');
-        notesStatus.textContent = 'Sauvegardé localement (sync indisponible)';
+        notesStatus.textContent = 'Sauvegarde échouée (' + e.message + ')';
       }
     }, 700);
   }
@@ -790,7 +790,7 @@
       let cached = '';
       try { cached = localStorage.getItem(LOCAL_CACHE_KEY) || ''; } catch (er) {}
       notesArea.innerHTML = cached;
-      notesStatus.textContent = 'Hors ligne — dernière version locale affichée';
+      notesStatus.textContent = 'Hors ligne (' + e.message + ')';
     }
 
     // Vérifie les mises à jour venant d'un autre PC (toutes les 8 secondes), sans écraser une saisie en cours
