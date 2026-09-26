@@ -269,6 +269,7 @@
     white-space: nowrap;
   }
   .reset-link:hover { text-decoration: underline; }
+  #btn-force-sync { margin-left: 8px; }
   #btn-alert-config { margin-left: 8px; }
 
   ::-webkit-scrollbar { width: 6px; }
@@ -400,6 +401,7 @@
       <div class="notes-footer" id="notes-footer" style="display:none;">
         <span>
           <span id="notes-status">&nbsp;</span>
+          <a href="#" id="btn-force-sync" class="reset-link" title="Vérifier immédiatement, sans attendre le prochain sondage automatique">🔄 synchroniser</a>
           <a href="#" id="btn-alert-config" class="reset-link">🔕 activer alerte</a>
         </span>
         <span>
@@ -497,6 +499,7 @@
   const BIN_ID_STORAGE = 'dashboard_jsonbin_bin_id';
   const LOCAL_CACHE_KEY = 'dashboard_notes_cache';
   const JSONBIN_ROOT = 'https://api.jsonbin.io/v3/b';
+  const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes, pour économiser le quota gratuit
 
   const setupEl = document.getElementById('notes-setup');
   const notesArea = document.getElementById('notes-area');
@@ -505,6 +508,7 @@
   const notesStatus = document.getElementById('notes-status');
   const btnReset = document.getElementById('btn-reset-bucket');
   const btnShowId = document.getElementById('btn-show-id');
+  const btnForceSync = document.getElementById('btn-force-sync');
   const btnAlertConfig = document.getElementById('btn-alert-config');
   const syncDot = document.getElementById('sync-dot');
   const btnCreate = document.getElementById('btn-create-bucket');
@@ -577,6 +581,12 @@
       "Identifiant du bloc-notes :\n" + binId + "\n\n" +
       "Comparez ces deux valeurs, caractère par caractère, avec celles de votre autre PC."
     );
+  });
+
+  btnForceSync.addEventListener('click', (e) => {
+    e.preventDefault();
+    notesStatus.textContent = 'Synchronisation…';
+    checkForUpdates(true);
   });
 
   btnReset.addEventListener('click', (e) => {
@@ -781,6 +791,41 @@
     }, 700);
   }
 
+  async function checkForUpdates(manual) {
+    if (!manual && document.activeElement === notesArea) return;
+    try {
+      const remote = await fetchRemoteNote();
+      if (remote !== lastKnownValue) {
+        if (alertEnabled && lastKnownValue !== null && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Bloc-notes modifié', { body: 'Le bloc-notes vient d\'être mis à jour.' });
+        }
+        lastKnownValue = remote;
+        notesArea.innerHTML = remote;
+        try { localStorage.setItem(LOCAL_CACHE_KEY, remote); } catch (e) {}
+      }
+      setDot('ok');
+      if (manual) {
+        const now = new Date();
+        notesStatus.textContent = 'Synchronisé à ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+      }
+      return true;
+    } catch (e) {
+      setDot('error');
+      if (manual) notesStatus.textContent = 'Synchro impossible (' + e.message + ')';
+      return false;
+    }
+  }
+
+  function startPolling() {
+    if (pollInterval) return;
+    pollInterval = setInterval(() => checkForUpdates(false), POLL_INTERVAL_MS);
+  }
+
+  function stopPolling() {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+
   async function initNotes() {
     showEditor();
     try {
@@ -798,24 +843,19 @@
       notesStatus.textContent = 'Hors ligne (' + e.message + ')';
     }
 
-    // Vérifie les mises à jour venant d'un autre PC (toutes les 45 secondes, pour économiser le quota gratuit), sans écraser une saisie en cours
-    pollInterval = setInterval(async () => {
-      if (document.activeElement === notesArea) return;
-      try {
-        const remote = await fetchRemoteNote();
-        if (remote !== lastKnownValue) {
-          if (alertEnabled && lastKnownValue !== null && 'Notification' in window && Notification.permission === 'granted') {
-            new Notification('Bloc-notes modifié', { body: 'Le bloc-notes vient d\'être mis à jour.' });
-          }
-          lastKnownValue = remote;
-          notesArea.innerHTML = remote;
-          try { localStorage.setItem(LOCAL_CACHE_KEY, remote); } catch (e) {}
-          setDot('ok');
-        }
-      } catch (e) {
-        setDot('error');
+    // Vérifie les mises à jour venant d'un autre PC, seulement quand l'onglet est visible
+    if (!document.hidden) startPolling();
+
+    // Met en pause la vérification quand l'onglet passe en arrière-plan (économise le quota),
+    // et revérifie immédiatement quand il redevient visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        checkForUpdates(false);
+        startPolling();
       }
-    }, 45000);
+    });
 
     notesArea.addEventListener('input', triggerSave);
   }
